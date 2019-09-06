@@ -15,6 +15,7 @@ import string
 from nltk.tokenize.treebank import TreebankWordDetokenizer
 from langdetect import detect
 import textract
+import pickle
 
 
 train_file = pd.read_csv("main.csv", delimiter=",")
@@ -63,10 +64,12 @@ def extract(cv):
 def parse():
     files = [join(upload_path, f) for f in listdir(upload_path) if isfile(join(upload_path, f))]
     i = 0
+    temp_files = []
     # database = pd.DataFrame()
-    skills = "office windows exchange active directory itil atc unix linux it"
+    skills = "mba office logistics english business analysis analytics purchase"
     while i < len(files):
         file = files[i]
+        temp_files.append(files[i])
         dat = extract(file)
         lang = detect(dat)
         if lang == "ru":
@@ -81,26 +84,24 @@ def parse():
         words = TreebankWordDetokenizer().detokenize(words)
         # print(dat)
         write_file(str(i), skills, 0, words)
+    return temp_files
 
 
 def write_file(id, skills, result, resume):
     csv = open("uploads/main.csv", "a")
     row = "\n" + id + "," + skills + "," + str(result) + "," + resume
-    for x in range(1):
-        csv.write(row)
+    csv.write(row)
 
 
 # columns = 'id' + "," + 'skills' + "," + 'result' + "," + 'resume'
 # f.write(columns)
 
-parse()
+temp_files = parse()
 
 #cv = cross_val_score(text_classifier, processed_features, tags, cv=5)
 
 #print(cv.mean())
 test_file = pd.read_csv("uploads/main.csv", delimiter=",")
-
-test_file['label'] = 'score'
 
 
 #1
@@ -156,26 +157,43 @@ for sentence in range(0, len(featurestest)):
     test_features.append(test_feature)
 
 
-vectorizer = TfidfVectorizer(max_features=1800, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
-processed_features = vectorizer.fit_transform(processed_features).toarray()
+# vectorizer = TfidfVectorizer(max_features=100, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
+# processed_features = vectorizer.fit_transform(processed_features).toarray()
+#
+#
+# X_train, X_test, y_train, y_test = train_test_split(processed_features, tags, test_size=0.3, random_state=0)
+#
+#
+# text_classifier = RandomForestClassifier(n_estimators=200)
+#
+#
+# vectorizer1 = TfidfVectorizer(max_features=100, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
+# test_features = vectorizer1.fit_transform(test_features).toarray()
+# print("123ew")
+# print(len(test_features[1]))
+#
+# #print(temp_files[1])
+#
+#
+# text_classifier.fit(X_train, y_train)
+#
+# filename = 'finalized_model.sav'
+# pickle.dump(text_classifier, open(filename, 'wb'))
+#
+# # some time later...
+#
+# # load the model from disk
+# loaded_model = pickle.load(open(filename, 'rb'))
+#
+#
+# print(len(X_train[1]))
+#
+# # text_classifier.predict(X_test)
+#
+# # print(text_classifier.predict(test_features))
+# print(len(processed_features))
+# print(len(test_features))
 
+#result = loaded_model.score(test_features, tagstest)
 
-X_train, X_test, y_train, y_test = train_test_split(processed_features, tags, test_size=0.2, random_state=0)
-
-
-text_classifier = RandomForestClassifier(n_estimators=200, random_state=0)
-
-
-vectorizer1 = TfidfVectorizer(max_features=1800, min_df=7, max_df=0.8, stop_words=stopwords.words('english'))
-test_features = vectorizer1.fit_transform(test_features).toarray()
-print("123ew")
-print(len(test_features[1]))
-
-
-text_classifier.fit(X_train, y_train)
-
-print(len(X_train[1]))
-
-#text_classifier.predict(X_test)
-
-print(text_classifier.predict(test_features))
+#print(result)

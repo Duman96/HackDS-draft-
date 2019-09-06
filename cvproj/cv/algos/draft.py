@@ -1,73 +1,76 @@
-import textract
-import PyPDF2
-import nltk
-from sklearn import datasets
-from sklearn import metrics
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import TfidfVectorizer
-import pandas as pd
 import numpy as np
+import pandas as pd
+import re
+import nltk
+import pickle
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from nltk.corpus import stopwords
-import os, sys
-from langdetect import detect
-from os import listdir
-from os.path import isfile, join
-from textblob import TextBlob
-import string
-from nltk.tokenize.treebank import TreebankWordDetokenizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+import nltk
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 
 
-default_path = "/home/seemsred/Desktop/Hackathon DS/HackDS/cvproj/cv/"
+nltk.download('stopwords')
+airline_tweets = pd.read_csv("main.csv", delimiter=",")
 
-upload_path = default_path + "algos/uploads/test/"
+airline_tweets.head()
 
-stop_words = set(stopwords.words('english'))
+tags = airline_tweets["result"].values.tolist()
 
+print(tags)
 
-def read(file):
-    text = textract.process(file)
-    return text.decode('utf-8')
+features = airline_tweets["resume"].values.tolist()
 
+processed_features = []
 
-def extract(cv):
-    text = read(cv)
-    text = str(text)
-    text = text.replace("\n", " ")
-    text = text.lower()
-    return text
+for sentence in range(0, len(features)):
+    # Remove all the special characters
+    processed_feature = re.sub(r'\W', ' ', str(features[sentence]))
 
+    # remove all single characters
+    processed_feature= re.sub(r'\s+[a-zA-Z]\s+', ' ', processed_feature)
 
-def parse():
-    files = [join(upload_path, f) for f in listdir(upload_path) if isfile(join(upload_path, f))]
-    i = 0
-    x = 0
-    # database = pd.DataFrame()
-    skills = "office windows exchange active directory itil atc unix linux it"
-    tokenskills = nltk.word_tokenize(skills)
-    z = 0
-    while i < len(files):
-        file = files[i]
-        dat = extract(file)
-        lang = detect(dat)
-        if lang == "ru":
-            trans = TextBlob(dat)
-            dat = trans.translate(from_lang='ru', to='en')
-        i += 1
-        data = str(dat)
-        dataw = data.translate(str.maketrans('', '', string.punctuation))
-        tokens = nltk.word_tokenize(dataw)
-        words = [word for word in tokens if word.isalpha()]
-        words = [w for w in words if not w in stop_words]
-        y = 0
-        while x < len(tokenskills):
-            while y < len(words):
-                if tokenskills[x] == words[y]:
-                    z += 1
-    return z
+    # Remove single characters from the start
+    processed_feature = re.sub(r'\^[a-zA-Z]\s+', ' ', processed_feature)
 
-    # print(dat)
+    # Substituting multiple spaces with single space
+    processed_feature = re.sub(r'\s+', ' ', processed_feature, flags=re.I)
+
+    # Removing prefixed 'b'
+    processed_feature = re.sub(r'^b\s+', '', processed_feature)
+
+    # Converting to Lowercase
+    processed_feature = processed_feature.lower()
+
+    processed_features.append(processed_feature)
 
 
-q = parse()
-print(q)
+vectorizer = TfidfVectorizer (max_features=100, stop_words=stopwords.words('english'))
+processed_features = vectorizer.fit_transform(processed_features).toarray()
+
+
+X_train, X_test, y_train, y_test = train_test_split(processed_features, tags, test_size=0.2, random_state=0)
+
+
+text_classifier = RandomForestClassifier(n_estimators=200, random_state=0)
+text_classifier.fit(X_train, y_train)
+
+
+filename = 'finalized_model.sav'
+pickle.dump(text_classifier, open(filename, 'wb'))
+
+loaded_model = pickle.load(open(filename, 'rb'))
+predictions = loaded_model.predict(X_test)
+
+
+print(confusion_matrix(y_test,predictions))
+print(classification_report(y_test,predictions))
+print(accuracy_score(y_test, predictions))
+
+
+
+
+
+
+

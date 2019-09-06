@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/home/seemsred/Desktop/Hackathon DS/Task_3/venv/bin/python" "$0" "$@"
+'''exec' "/home/seemsred/Desktop/Hackathon DS/HackDS/venv/bin/python" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
